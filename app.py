@@ -11,49 +11,50 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import pickle
 
 # Load the trained model
-with open('model.pkl', 'rb') as file:
-    model = pickle.load(file)
+model = pickle.load(open('model.pkl', 'rb'))
 
+# App title
 st.title('HELOC Eligibility Prediction App')
 
-# File uploader
-uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx'])
+# File upload
+uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
-        # Read the file
+        # Read the uploaded file
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
-        elif uploaded_file.name.endswith('.xlsx'):
-            df = pd.read_excel(uploaded_file)
-        
-        st.write("Uploaded Data Preview:")
-        st.write(df.head())
-        
-        # Perform label encoding on 'RiskPerformance'
-        df['RiskPerformance'] = df['RiskPerformance'].map({'Bad': 0, 'Good': 1})
-        st.write("After Label Encoding:")
-        st.write(df[['RiskPerformance']].head())
-        
-        # Make predictions
-        if 'RiskPerformance' in df.columns:
-            input_data = df.drop(columns=['RiskPerformance'], errors='ignore')
         else:
-            input_data = df
+            df = pd.read_excel(uploaded_file)
 
-        predictions = model.predict(input_data)
+        st.subheader('Data Preview:')
+        st.write(df.head())
+
+        # Preprocess data (e.g., Label Encoding)
+        if 'RiskPerformance' in df.columns:
+            df['RiskPerformance'] = df['RiskPerformance'].map({'Bad': 0, 'Good': 1})
         
-        # Convert predictions to human-readable labels
-        results = ['Accept: Good credit performance expected.' if pred == 1 else 'Reject: High risk of poor credit performance.' for pred in predictions]
-        
-        # Display predictions
-        st.write("Predictions:")
-        st.write(pd.DataFrame(results, columns=['Result']))
+        st.subheader('After Label Encoding:')
+        st.write(df[['RiskPerformance']].head())
+
+        # Make predictions
+        predictions = model.predict(df.drop(columns=['RiskPerformance'], errors='ignore'))
+
+        # Map predictions to meaningful output
+        result = ["Accept: The applicant meets the eligibility criteria." 
+                  if int(pred) == 1 
+                  else "Reject: The applicant does not meet the eligibility criteria." 
+                  for pred in predictions]
+
+        # Display predictions with explanations
+        st.subheader("Predictions:")
+        st.write(pd.DataFrame(result, columns=["Eligibility Status"]))
 
     except Exception as e:
         st.error(f"Error processing the file: {e}")
 else:
-    st.info("Please upload a CSV or XLSX file.")
+    st.info('Please upload a CSV or XLSX file.')
