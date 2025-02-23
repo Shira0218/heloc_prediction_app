@@ -9,39 +9,51 @@
 
 # In[3]:
 
-
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib  # For loading the pre-trained model
-from sklearn.ensemble import RandomForestClassifier
+import pickle
 
-model = joblib.load('model.pkl')
+# Load the trained model
+with open('model.pkl', 'rb') as file:
+    model = pickle.load(file)
 
 st.title('HELOC Eligibility Prediction App')
 
-uploaded_file = st.file_uploader('Choose a file', type=['csv', 'xlsx'])
+# File uploader
+uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx'])
+
 if uploaded_file is not None:
     try:
+        # Read the file
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         elif uploaded_file.name.endswith('.xlsx'):
             df = pd.read_excel(uploaded_file)
-
-        st.write('Uploaded Data Preview:')
+        
+        st.write("Uploaded Data Preview:")
         st.write(df.head())
-
-       
+        
+        # Perform label encoding on 'RiskPerformance'
+        df['RiskPerformance'] = df['RiskPerformance'].map({'Bad': 0, 'Good': 1})
+        st.write("After Label Encoding:")
+        st.write(df[['RiskPerformance']].head())
+        
+        # Make predictions
         if 'RiskPerformance' in df.columns:
-            df['RiskPerformance'] = df['RiskPerformance'].map({'Bad': 0, 'Good': 1})
-            st.write('After Label Encoding:')
-            st.write(df['RiskPerformance'].head())
+            input_data = df.drop(columns=['RiskPerformance'], errors='ignore')
+        else:
+            input_data = df
 
-        X = df.drop(columns=['RiskPerformance'], errors='ignore')
+        predictions = model.predict(input_data)
+        
+        # Convert predictions to human-readable labels
+        results = ['Accept: Good credit performance expected.' if pred == 1 else 'Reject: High risk of poor credit performance.' for pred in predictions]
+        
+        # Display predictions
+        st.write("Predictions:")
+        st.write(pd.DataFrame(results, columns=['Result']))
 
-        if st.button('Predict Eligibility'):
-            predictions = model.predict(X)
-            st.write('Predictions:')
-            st.write(predictions)
     except Exception as e:
-        st.error(f'Error processing the file: {e}')
+        st.error(f"Error processing the file: {e}")
+else:
+    st.info("Please upload a CSV or XLSX file.")
