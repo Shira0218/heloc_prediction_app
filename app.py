@@ -919,10 +919,54 @@ languages = {
         'reason_accept': 'Congratulations! Your application is accepted.',
         'reason_reject': 'Sorry, your application is rejected due to risk factors.'
     },
-    'Chinese': {...},
-    'Russian': {...},
-    'Vietnamese': {...},
-    'Hindi': {...}
+    'Chinese': {
+        'app_title': 'HELOC 资格预测应用',
+        'choose_file': '选择文件',
+        'drag_drop': '将文件拖放到这里',
+        'or_manual_input': '或者手动输入数据',
+        'submit': '提交',
+        'prediction': '预测结果',
+        'accept': '接受',
+        'reject': '拒绝',
+        'reason_accept': '恭喜！您的申请已被接受。',
+        'reason_reject': '抱歉，由于风险因素，您的申请被拒绝。'
+    },
+    'Russian': {
+        'app_title': 'Приложение для прогнозирования HELOC',
+        'choose_file': 'Выберите файл',
+        'drag_drop': 'Перетащите файл сюда',
+        'or_manual_input': 'Или введите данные вручную',
+        'submit': 'Отправить',
+        'prediction': 'Результат прогноза',
+        'accept': 'Принято',
+        'reject': 'Отклонено',
+        'reason_accept': 'Поздравляем! Ваша заявка принята.',
+        'reason_reject': 'Извините, ваша заявка отклонена из-за факторов риска.'
+    },
+    'Vietnamese': {
+        'app_title': 'Ứng dụng Dự đoán Đủ điều kiện HELOC',
+        'choose_file': 'Chọn tệp',
+        'drag_drop': 'Kéo và thả tệp vào đây',
+        'or_manual_input': 'Hoặc nhập dữ liệu thủ công',
+        'submit': 'Gửi',
+        'prediction': 'Kết quả Dự đoán',
+        'accept': 'Chấp nhận',
+        'reject': 'Từ chối',
+        'reason_accept': 'Chúc mừng! Đơn đăng ký của bạn đã được chấp nhận.',
+        'reason_reject': 'Xin lỗi, đơn đăng ký của bạn đã bị từ chối do các yếu tố rủi ro.'
+    },
+    'Hindi': {
+        'app_title': 'HELOC पात्रता भविष्यवाणी ऐप',
+        'choose_file': 'फ़ाइल चुनें',
+        'drag_drop': 'फ़ाइल को यहाँ खींचें और छोड़ें',
+        'or_manual_input': 'या मैन्युअल रूप से डेटा इनपुट करें',
+        'submit': 'जमा करें',
+        'prediction': 'भविष्यवाणी परिणाम',
+        'accept': 'स्वीकार करें',
+        'reject': 'अस्वीकार करें',
+        'reason_accept': 'बधाई हो! आपका आवेदन स्वीकार कर लिया गया है।',
+        'reason_reject': 'क्षमा करें, आपके आवेदन को जोखिम कारकों के कारण अस्वीकार कर दिया गया है।'
+    }
 }
 
 # Streamlit app layout
@@ -934,21 +978,32 @@ st.title(text['app_title'])
 
 uploaded_file = st.file_uploader(text['choose_file'], type=['csv', 'xlsx'])
 
-st.write(text['or_manual_input'])
-manual_input = {}
-input_columns = ['ExternalRiskEstimate', 'MSinceOldestTradeOpen', 'MSinceMostRecentTradeOpen']
-for col in input_columns:
-    manual_input[col] = st.number_input(label=col, value=0)
-
-if st.button(text['submit']):
-    input_data = pd.DataFrame([manual_input])
-    predictions = model.predict(input_data)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    predictions = model.predict(df)
     st.subheader(text['prediction'])
     for pred in predictions:
         if pred == 1:
             st.success(f"{text['accept']}: {text['reason_accept']}")
         else:
             st.error(f"{text['reject']}: {text['reason_reject']}")
+else:
+    st.write(text['or_manual_input'])
+    manual_input = {}
+    input_columns = ['ExternalRiskEstimate', 'MSinceOldestTradeOpen', 'MSinceMostRecentTradeOpen']
+    for col in input_columns:
+        manual_input[col] = st.number_input(label=col, value=0)
+    
+    if st.button(text['submit']):
+        input_data = pd.DataFrame([manual_input])
+        predictions = model.predict(input_data)
+        st.subheader(text['prediction'])
+        for pred in predictions:
+            if pred == 1:
+                st.success(f"{text['accept']}: {text['reason_accept']}")
+            else:
+                st.error(f"{text['reject']}: {text['reason_reject']}")
+
 
 
 # In[ ]:
