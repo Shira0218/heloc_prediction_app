@@ -8,3 +8,4 @@ lightgbm
 matplotlib
 imbalanced-learn
 seaborn
+xgboost
